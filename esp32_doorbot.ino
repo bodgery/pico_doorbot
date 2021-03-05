@@ -59,6 +59,8 @@ const char* location = "backdoor";
 
 const char* dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
+const char* auth_user = "backdoorbot";
+const char* auth_passwd = "x6EYeD2j$k*S*Mrodoti";
 
 
 void setup()
@@ -72,8 +74,14 @@ void setup()
     while( WiFi.status() != WL_CONNECTED ) {
         delay( 1000 );
         Serial.print( "." );
+        Serial.flush();
     }
     Serial.println( "Connected!" );
+    Serial.print( "IP: " );
+    Serial.println( WiFi.localIP() );
+    Serial.flush();
+    // Wait a bit for WiFi connection to settle
+    delay( 5000 );
 
     rebuild_cache();
     // TODO Set a timer to rebuild the cache every 10 minutes
@@ -96,6 +104,7 @@ void rebuild_cache()
     Serial.println( "[CACHE] Rebuild cached keys" );
     http.begin( dump_keys_request, root_ca );
     http.addHeader( "Accept", "application/json" );
+    http.setAuthorization( auth_user, auth_passwd );
     int status = http.GET();
 
     if( 200 == status ) {
@@ -105,7 +114,9 @@ void rebuild_cache()
     else {
         Serial.print( "[CACHE] Error fetching new key database: " );
         Serial.println( status );
+        Serial.print( "[CACHE] HTTP status: " );
         Serial.println( http.getString() );
+        Serial.flush();
     }
 
     http.end();
