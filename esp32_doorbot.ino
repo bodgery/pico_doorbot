@@ -23,9 +23,11 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <WiFi.h>
-#include <HTTPClient.h>
 #include <Dictionary.h>
+#include <HTTPClient.h>
+#include <WiFi.h>
+#include <Wiegand.h>
+
 #include "config.h"
 
 
@@ -62,7 +64,7 @@ const char* dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_a
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
 
 // Time to rebuild cache
-const unsigned long cache_rebuild_time_ms = 1 * 60 * 1000;
+const unsigned long cache_rebuild_time_ms = 15 * 60 * 1000;
 
 // We're going to store a lot of keys, and this is our main thing, so 
 // make a lot of room.
@@ -70,11 +72,32 @@ const int dict_size = 8192;
 Dictionary *key_cache;
 unsigned long ms_since_cache = 0;
 
+// Pins for Wiegand reads. These must be able to handle interrupts. All GPIO
+// pins on the ESP32 can handle it, but that may be different on other chips
+const int DATA0 = 2;
+const int DATA1 = 4;
+Wiegand wiegand;
+
 
 void setup()
 {
     Serial.begin( 115200 );
+    init_wifi();
+    rebuild_cache();
+    init_wiegand();
+}
 
+void loop()
+{
+    noInterrupts();
+    wiegand.flush();
+    interrupts();
+    check_cache_build_time();
+}
+
+
+void init_wifi()
+{
     Serial.print( "Connecting to " );
     Serial.print( ssid );
     Serial.print( " " );
@@ -90,21 +113,92 @@ void setup()
     Serial.print( "IP: " );
     Serial.println( WiFi.localIP() );
     Serial.flush();
-
-    rebuild_cache();
 }
 
-void loop()
+void init_wiegand()
 {
-    // TODO
-    // Read Wiegand
-    // Check if it's in the local cache
-    // If not, make a request to the server
-    // If either one passes, activate door for 30 seconds
+    Serial.println( "[WIEGAND.INIT] Startup Wiegand" );
+    Serial.flush();
 
-    check_cache_build_time();
+    wiegand.onReceive( wiegand_receive, "Card readed: " );
+    wiegand.onReceiveError( wiegand_error, "Card read error: " );
+    wiegand.onStateChange( wiegand_state_change, "State changed: " );
+    wiegand.begin( Wiegand::LENGTH_ANY, true );
+
+    pinMode( DATA0, INPUT );
+    pinMode( DATA1, INPUT );
+    attachInterrupt( digitalPinToInterrupt( DATA0 ),
+        wiegand_pin_state_change, CHANGE );
+    attachInterrupt( digitalPinToInterrupt( DATA1 ),
+        wiegand_pin_state_change, CHANGE );
+
+    Serial.println( "[WIEGAND.INIT] Wiegand has started" );
+    Serial.flush();
 }
 
+// TODO
+// Check if tag is in the local cache
+// If not, make a request to the server
+// If either one passes, activate door for 30 seconds
+
+void wiegand_pin_state_change()
+{
+    wiegand.setPin0State( digitalRead( DATA0 ) );
+    wiegand.setPin1State( digitalRead( DATA1 ) );
+}
+
+void wiegand_state_change( bool plugged, const char* message )
+{
+    Serial.print(message);
+    Serial.println(plugged ? "CONNECTED" : "DISCONNECTED");
+    Serial.flush();
+}
+
+void wiegand_receive(
+    uint8_t* data, uint8_t bits
+    ,const char* message
+)
+{
+    Serial.print( "[WIEGAND.RECEIVE] " );
+    Serial.print(message);
+    Serial.print(bits);
+    Serial.print("bits / ");
+
+    //Print value in HEX
+    uint8_t bytes = (bits+7)/8;
+    for( int i = 0; i < bytes; i++ ) {
+        Serial.print( data[i] >> 4, 16 );
+        Serial.print( data[i] & 0xF, 16 );
+    }
+
+    Serial.println();
+    Serial.flush();
+}
+
+void wiegand_error(
+    Wiegand::DataError error
+    ,uint8_t* rawData
+    ,uint8_t rawBits
+    ,const char* message
+)
+{
+    Serial.print( "[WIEGAND.ERROR] " );
+    Serial.print(message);
+    Serial.print(Wiegand::DataErrorStr(error));
+    Serial.print(" - Raw data: ");
+    Serial.print(rawBits);
+    Serial.print("bits / ");
+
+    //Print value in HEX
+    uint8_t bytes = (rawBits+7)/8;
+    for( int i = 0; i < bytes; i++ ) {
+        Serial.print(rawData[i] >> 4, 16);
+        Serial.print(rawData[i] & 0xF, 16);
+    }
+
+    Serial.println();
+    Serial.flush();
+}
 
 void check_cache_build_time()
 {
