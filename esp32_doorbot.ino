@@ -61,10 +61,14 @@ const char* location = "backdoor";
 const char* dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
 
+// Time to rebuild cache
+const unsigned long cache_rebuild_time_ms = 1 * 60 * 1000;
+
 // We're going to store a lot of keys, and this is our main thing, so 
 // make a lot of room.
-const int dict_size = 10000;
+const int dict_size = 8192;
 Dictionary *key_cache;
+unsigned long ms_since_cache = 0;
 
 
 void setup()
@@ -88,7 +92,6 @@ void setup()
     Serial.flush();
 
     rebuild_cache();
-    // TODO Set a timer to rebuild the cache every 10 minutes
 }
 
 void loop()
@@ -98,8 +101,21 @@ void loop()
     // Check if it's in the local cache
     // If not, make a request to the server
     // If either one passes, activate door for 30 seconds
+
+    check_cache_build_time();
 }
 
+
+void check_cache_build_time()
+{
+    unsigned long ms_since = millis() - ms_since_cache;
+    if( cache_rebuild_time_ms <= ms_since ) {
+        Serial.print( "[CACHE] " );
+        Serial.print( ms_since );
+        Serial.println( "ms has passed since cache built, rebuilding" );
+        rebuild_cache();
+    }
+}
 
 void rebuild_cache()
 {
@@ -124,6 +140,9 @@ void rebuild_cache()
         Serial.print( key_cache->count() );
         Serial.println( " keys" );
         Serial.flush();
+
+        // Reset time since rebuild
+        ms_since_cache = millis();
     }
     else {
         Serial.print( "[CACHE] Error fetching new key database: " );
