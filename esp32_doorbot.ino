@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Dictionary.h>
+#include "wifi_config.h"
 
 
 const char* root_ca = \
@@ -49,9 +50,6 @@ const char* root_ca = \
 "JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo\n" \
 "Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
 "-----END CERTIFICATE-----\n";
-
-const char* ssid = "The Bodgery";
-const char* psk = "0987654321";
 
 const char* hostname = "backdoorbot";
 
