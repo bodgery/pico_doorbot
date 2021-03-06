@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Dictionary.h>
-#include "wifi_config.h"
+#include "config.h"
 
 
 const char* root_ca = \
@@ -60,8 +60,6 @@ const char* location = "backdoor";
 
 const char* dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
-const char* auth_user = "backdoorbot";
-const char* auth_passwd = "x6EYeD2j$k*S*Mrodoti";
 
 // We're going to store a lot of keys, and this is our main thing, so 
 // make a lot of room.

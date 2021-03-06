@@ -1,0 +1,11 @@
+#ifndef CONFIG_H
+#  define CONFIG_H
+
+const char* ssid = "WIFI NAME";
+const char* psk = "WIFI PASS";
+
+const char* auth_user = "USER";
+const char* auth_passwd = "PASS";
+
+
+#endif
