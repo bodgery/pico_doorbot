@@ -80,8 +80,6 @@ void setup()
     Serial.print( "IP: " );
     Serial.println( WiFi.localIP() );
     Serial.flush();
-    // Wait a bit for WiFi connection to settle
-    delay( 5000 );
 
     rebuild_cache();
     // TODO Set a timer to rebuild the cache every 10 minutes
@@ -107,7 +105,7 @@ void rebuild_cache()
     http.setAuthorization( auth_user, auth_passwd );
     int status = http.GET();
 
-    if( 200 == status ) {
+    if( HTTP_CODE_OK == status ) {
         // TODO rebuild cache
         Serial.println( "[CACHE] Fetched new key database" );
     }
