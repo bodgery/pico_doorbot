@@ -25,6 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <Dictionary.h>
 
 
 const char* root_ca = \
@@ -52,6 +53,8 @@ const char* root_ca = \
 const char* ssid = "The Bodgery";
 const char* psk = "0987654321";
 
+const char* hostname = "backdoorbot";
+
 const int door_open_sec = 30;
 const int door_pin = 12;
 const int led_pin = 13;
@@ -62,6 +65,11 @@ const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/
 const char* auth_user = "backdoorbot";
 const char* auth_passwd = "x6EYeD2j$k*S*Mrodoti";
 
+// We're going to store a lot of keys, and this is our main thing, so 
+// make a lot of room.
+const int dict_size = 10000;
+Dictionary *key_cache;
+
 
 void setup()
 {
@@ -70,6 +78,8 @@ void setup()
     Serial.print( "Connecting to " );
     Serial.print( ssid );
     Serial.print( " " );
+
+    WiFi.setHostname( hostname );
     WiFi.begin( ssid, psk );
     while( WiFi.status() != WL_CONNECTED ) {
         delay( 1000 );
@@ -106,8 +116,18 @@ void rebuild_cache()
     int status = http.GET();
 
     if( HTTP_CODE_OK == status ) {
-        // TODO rebuild cache
         Serial.println( "[CACHE] Fetched new key database" );
+        Serial.flush();
+        String body = http.getString();
+
+        Serial.println( "[CACHE] Rebuilding dictionary" );
+        Serial.flush();
+        key_cache = new Dictionary( dict_size );
+        key_cache->jload( body );
+        Serial.print( "[CACHE] Processed " );
+        Serial.print( key_cache->count() );
+        Serial.println( " keys" );
+        Serial.flush();
     }
     else {
         Serial.print( "[CACHE] Error fetching new key database: " );
