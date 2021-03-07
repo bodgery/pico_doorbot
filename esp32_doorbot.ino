@@ -60,7 +60,7 @@ const int door_pin = 12;
 const int led_pin = 13;
 const char* location = "backdoor";
 
-const char* dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
+const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
 
 // Time to rebuild cache
@@ -136,10 +136,66 @@ void init_wiegand()
     Serial.flush();
 }
 
-// TODO
-// Check if tag is in the local cache
-// If not, make a request to the server
-// If either one passes, activate door for 30 seconds
+void check_tag( String tag )
+{
+    Serial.print( "[CHECK] Checking tag: " );
+    Serial.println( tag );
+
+    String found_tag = key_cache->search( tag );
+    Serial.print( "[CHECK] Tag in cache: " );
+    Serial.println( found_tag );
+    Serial.flush();
+
+    if( found_tag.length() > 0 ) {
+        Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
+        Serial.flush();
+        open_door();
+    }
+    else if( check_tag_remote( tag ) ) {
+        open_door();
+    }
+    else {
+        Serial.println( "[CHECK] Tag is not valid" );
+        Serial.flush();
+    }
+}
+
+bool check_tag_remote( String tag )
+{
+    Serial.println( "[CHECK.REMOTE] Checking if tag is valid" );
+    Serial.flush();
+
+    HTTPClient http;
+    String request = "";
+    request.concat( check_key_request );
+    request.concat( tag );
+
+    http.begin( request.c_str(), root_ca );
+    http.setAuthorization( auth_user, auth_passwd );
+    int status = http.GET();
+
+    bool result = false;
+    if( HTTP_CODE_OK == status ) {
+        Serial.println( "[CHECK.REMOTE] Key is OK" );
+        Serial.flush();
+        result = true;
+    }
+    else {
+        Serial.print( "[CHECK.REMOTE] Could not verify key: " );
+        Serial.println( status );
+        Serial.flush();
+    }
+
+    http.end();
+    return result;
+}
+
+void open_door()
+{
+    Serial.println( "[DOOR] Opening" );
+    Serial.flush();
+    // TODO
+}
 
 void wiegand_pin_state_change()
 {
@@ -159,20 +215,38 @@ void wiegand_receive(
     ,const char* message
 )
 {
+    uint8_t bytes = (bits+7)/8;
+
     Serial.print( "[WIEGAND.RECEIVE] " );
     Serial.print(message);
+    Serial.print( "{ length: " );
+    Serial.print( bytes );
+    Serial.print( " } { bits: " );
     Serial.print(bits);
-    Serial.print("bits / ");
-
-    //Print value in HEX
-    uint8_t bytes = (bits+7)/8;
-    for( int i = 0; i < bytes; i++ ) {
-        Serial.print( data[i] >> 4, 16 );
-        Serial.print( data[i] & 0xF, 16 );
-    }
-
-    Serial.println();
+    Serial.print( " }" );
     Serial.flush();
+
+    unsigned long long_data = 0;
+    for( int i = 0; i < bytes; i++ ) {
+        long_data <<= 8;
+        long_data |= data[i];
+    }
+    String str_data_no_prefix = String( long_data );
+
+    String str_data = "";
+    // Original database stores numbers with 0's prefix padding to a length of 
+    // 10, so correct for this
+    while( (str_data_no_prefix.length() + str_data.length()) < 10 ) {
+        str_data.concat( "0" );
+    }
+    str_data.concat( str_data_no_prefix );
+
+    Serial.print( " { formatted: " );
+    Serial.print( str_data );
+    Serial.println( "}" );
+    Serial.flush();
+
+    check_tag( str_data );
 }
 
 void wiegand_error(
