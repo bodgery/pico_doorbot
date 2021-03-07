@@ -58,10 +58,10 @@ const char* hostname = "backdoorbot";
 const int door_open_sec = 30;
 const int door_pin = 12;
 const int led_pin = 13;
-const char* location = "backdoor";
+const String location = "backdoor";
 
 const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
-const char* check_key_request = "https://rfid2.shop.thebodgery.org/secure/entry/";
+const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
 
 // Time to rebuild cache
 const unsigned long cache_rebuild_time_ms = 15 * 60 * 1000;
@@ -162,13 +162,20 @@ void check_tag( String tag )
 
 bool check_tag_remote( String tag )
 {
-    Serial.println( "[CHECK.REMOTE] Checking if tag is valid" );
+    Serial.print( "[CHECK.REMOTE] Checking if tag is valid: " );
+    Serial.println( tag );
     Serial.flush();
 
     HTTPClient http;
     String request = "";
     request.concat( check_key_request );
     request.concat( tag );
+    request.concat( "/" );
+    request.concat( location );
+
+    Serial.print( "[CHECK.REMOTE] Sending request to: " );
+    Serial.println( request );
+    Serial.flush();
 
     http.begin( request.c_str(), root_ca );
     http.setAuthorization( auth_user, auth_passwd );
