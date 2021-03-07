@@ -78,6 +78,12 @@ const int DATA0 = 2;
 const int DATA1 = 4;
 Wiegand wiegand;
 
+// Door state management
+const int door_open_time_ms = 30 * 1000;
+bool is_door_open = false;
+unsigned long door_opened_at = 0;
+const int DOOR_PIN = 5;
+
 
 void setup()
 {
@@ -85,6 +91,9 @@ void setup()
     init_wifi();
     rebuild_cache();
     init_wiegand();
+
+    pinMode( DOOR_PIN, OUTPUT );
+    digitalWrite( DOOR_PIN, LOW );
 }
 
 void loop()
@@ -93,6 +102,7 @@ void loop()
     wiegand.flush();
     interrupts();
     check_cache_build_time();
+    check_door_status();
 }
 
 
@@ -120,7 +130,7 @@ void init_wiegand()
     Serial.println( "[WIEGAND.INIT] Startup Wiegand" );
     Serial.flush();
 
-    wiegand.onReceive( wiegand_receive, "Card readed: " );
+    wiegand.onReceive( wiegand_receive, "Card read: " );
     wiegand.onReceiveError( wiegand_error, "Card read error: " );
     wiegand.onStateChange( wiegand_state_change, "State changed: " );
     wiegand.begin( Wiegand::LENGTH_ANY, true );
@@ -199,9 +209,40 @@ bool check_tag_remote( String tag )
 
 void open_door()
 {
-    Serial.println( "[DOOR] Opening" );
+    Serial.println( "[DOOR] Instructed to open" );
     Serial.flush();
-    // TODO
+
+    if( is_door_open ) {
+        Serial.println( "[DOOR] Door already open, ignoring" );
+        Serial.flush();
+    }
+    else {
+        door_opened_at = millis();
+        is_door_open = true;
+        digitalWrite( DOOR_PIN, HIGH );
+
+        Serial.println( "[DOOR] Opening door" );
+        Serial.flush();
+    }
+}
+
+void close_door()
+{
+    Serial.println( "[DOOR] Closing door" );
+    Serial.flush();
+
+    is_door_open = false;
+    digitalWrite( DOOR_PIN, LOW );
+}
+
+void check_door_status()
+{
+    if( is_door_open
+        && ( millis() >= door_open_time_ms + door_opened_at )
+    ) {
+        Serial.println( "[DOOR] Door open time has elapsed, closing" );
+        close_door();
+    }
 }
 
 void wiegand_pin_state_change()
@@ -250,7 +291,7 @@ void wiegand_receive(
 
     Serial.print( " { formatted: " );
     Serial.print( str_data );
-    Serial.println( "}" );
+    Serial.println( " }" );
     Serial.flush();
 
     check_tag( str_data );
