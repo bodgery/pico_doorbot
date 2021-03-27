@@ -64,7 +64,7 @@ const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
 
 // Time to rebuild cache
-const unsigned long cache_rebuild_time_ms = 15 * 60 * 1000;
+const unsigned long cache_rebuild_time_ms = 60 * 60 * 1000;
 
 // We're going to store a lot of keys, and this is our main thing, so 
 // make a lot of room.
@@ -76,6 +76,8 @@ unsigned long ms_since_cache = 0;
 // pins on the ESP32 can handle it, but that may be different on other chips
 const int DATA0 = 2;
 const int DATA1 = 4;
+//const int WIEGAND_BIT_LENGTH = Wiegand::LENGTH_ANY;
+const int WIEGAND_BIT_LENGTH = 8;
 Wiegand wiegand;
 
 // Door state management
@@ -98,9 +100,7 @@ void setup()
 
 void loop()
 {
-    noInterrupts();
-    wiegand.flush();
-    interrupts();
+    check_wiegand();
     check_cache_build_time();
     check_door_status();
 }
@@ -130,20 +130,24 @@ void init_wiegand()
     Serial.println( "[WIEGAND.INIT] Startup Wiegand" );
     Serial.flush();
 
-    wiegand.onReceive( wiegand_receive, "Card read: " );
-    wiegand.onReceiveError( wiegand_error, "Card read error: " );
-    wiegand.onStateChange( wiegand_state_change, "State changed: " );
-    wiegand.begin( Wiegand::LENGTH_ANY, true );
+    wiegand.onReceive( wiegand_receive, "[WIEGAND] Card read: " );
+    wiegand.onReceiveError( wiegand_error, "[WIEGAND] Card read error: " );
+    wiegand.onStateChange( wiegand_state_change, "[WIEGAND] State changed: " );
+    wiegand.begin( WIEGAND_BIT_LENGTH, true );
 
     pinMode( DATA0, INPUT );
     pinMode( DATA1, INPUT );
-    attachInterrupt( digitalPinToInterrupt( DATA0 ),
-        wiegand_pin_state_change, CHANGE );
-    attachInterrupt( digitalPinToInterrupt( DATA1 ),
-        wiegand_pin_state_change, CHANGE );
 
     Serial.println( "[WIEGAND.INIT] Wiegand has started" );
     Serial.flush();
+}
+
+void check_wiegand()
+{
+    wiegand.flush();
+
+    wiegand.setPin0State( digitalRead( DATA0 ) );
+    wiegand.setPin1State( digitalRead( DATA1 ) );
 }
 
 void check_tag( String tag )
@@ -259,18 +263,18 @@ void wiegand_state_change( bool plugged, const char* message )
 }
 
 void wiegand_receive(
-    uint8_t* data, uint8_t bits
+    uint8_t* data
+    ,uint8_t bits
     ,const char* message
 )
 {
     uint8_t bytes = (bits+7)/8;
 
-    Serial.print( "[WIEGAND.RECEIVE] " );
     Serial.print(message);
     Serial.print( "{ length: " );
     Serial.print( bytes );
     Serial.print( " } { bits: " );
-    Serial.print(bits);
+    Serial.print( bits );
     Serial.print( " }" );
     Serial.flush();
 
