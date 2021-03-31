@@ -100,24 +100,24 @@ Wire Wire Line
 	1500 3700 1650 3700
 Wire Wire Line
 	1650 3800 1500 3800
-Text GLabel 5200 1300 0    50   Input ~ 0
+Text GLabel 4050 1150 0    50   Input ~ 0
 12V
 $Comp
 L power:GND #PWR0104
 U 1 1 605FBF90
-P 5400 2050
-F 0 "#PWR0104" H 5400 1800 50  0001 C CNN
-F 1 "GND" H 5405 1877 50  0000 C CNN
-F 2 "" H 5400 2050 50  0001 C CNN
-F 3 "" H 5400 2050 50  0001 C CNN
-	1    5400 2050
+P 5550 1150
+F 0 "#PWR0104" H 5550 900 50  0001 C CNN
+F 1 "GND" H 5555 977 50  0000 C CNN
+F 2 "" H 5550 1150 50  0001 C CNN
+F 3 "" H 5550 1150 50  0001 C CNN
+	1    5550 1150
 	1    0    0    -1  
 $EndComp
-Text GLabel 5200 1500 0    50   Input ~ 0
+Text GLabel 4050 1350 0    50   Input ~ 0
 DOOR
-Text GLabel 5200 1600 0    50   Input ~ 0
+Text GLabel 4050 1250 0    50   Input ~ 0
 WIEGAND_OUT1
-Text GLabel 5200 1700 0    50   Input ~ 0
+Text GLabel 4850 1350 2    50   Input ~ 0
 WIEGAND_OUT2
 $Comp
 L Regulator_Linear:L7805 U1
@@ -285,18 +285,8 @@ F 4 "1727-4578-2-ND" H 5250 5650 50  0001 C CNN "Digikey #"
 $EndComp
 Text GLabel 5150 4950 1    50   Input ~ 0
 5V
-Text GLabel 5200 1400 0    50   Input ~ 0
+Text GLabel 4100 2050 0    50   Input ~ 0
 3.3V
-Wire Wire Line
-	5200 1300 5400 1300
-Wire Wire Line
-	5400 1400 5200 1400
-Wire Wire Line
-	5200 1500 5400 1500
-Wire Wire Line
-	5400 1600 5200 1600
-Wire Wire Line
-	5200 1700 5400 1700
 Text GLabel 5350 4950 1    50   Input ~ 0
 3.3V
 Wire Wire Line
@@ -336,27 +326,21 @@ F 3 "" H 5250 6400 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5250 6400 5250 6150
-Text GLabel 5200 1900 0    50   Input ~ 0
+Text GLabel 4050 1550 0    50   Input ~ 0
 READER_LED
-Text GLabel 5200 1800 0    50   Input ~ 0
+Text GLabel 4050 1450 0    50   Input ~ 0
 READER_BUZZ
 $Comp
-L Connector_Generic:Conn_01x08 J3
+L Connector_Generic:Conn_02x10_Odd_Even J3
 U 1 1 6063C556
-P 5600 1600
-F 0 "J3" H 5680 1592 50  0000 L CNN
-F 1 "Conn_01x08" H 5680 1501 50  0000 L CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x08" H 5600 1600 50  0001 C CNN
-F 3 "~" H 5600 1600 50  0001 C CNN
-	1    5600 1600
-	1    0    0    -1  
+P 4500 1650
+F 0 "J3" H 4500 2300 50  0000 L CNN
+F 1 "ESP32" H 4450 2200 50  0000 L CNN
+F 2 "Pin_Headers:Pin_Header_Straight_2x10" H 4500 1650 50  0001 C CNN
+F 3 "~" H 4500 1650 50  0001 C CNN
+	1    4500 1650
+	-1   0    0    1   
 $EndComp
-Wire Wire Line
-	5200 1800 5400 1800
-Wire Wire Line
-	5400 1900 5200 1900
-Wire Wire Line
-	5400 2050 5400 2000
 $Comp
 L Connector_Generic:Conn_01x06 J4
 U 1 1 60640874
@@ -444,4 +428,32 @@ Wire Wire Line
 	7350 1850 7150 1850
 Wire Wire Line
 	6400 1450 7350 1450
+Wire Wire Line
+	4200 1150 4050 1150
+Wire Wire Line
+	4050 1250 4200 1250
+Wire Wire Line
+	4200 1350 4050 1350
+Wire Wire Line
+	4050 1450 4200 1450
+Wire Wire Line
+	4200 1550 4050 1550
+Wire Wire Line
+	4100 2050 4200 2050
+Wire Wire Line
+	4700 1350 4850 1350
+Wire Wire Line
+	4700 1150 5550 1150
+NoConn ~ 4700 1250
+NoConn ~ 4700 1450
+NoConn ~ 4700 1550
+NoConn ~ 4700 1650
+NoConn ~ 4700 1750
+NoConn ~ 4700 1850
+NoConn ~ 4700 1950
+NoConn ~ 4700 2050
+NoConn ~ 4200 1950
+NoConn ~ 4200 1850
+NoConn ~ 4200 1750
+NoConn ~ 4200 1650
 $EndSCHEMATC
