@@ -338,6 +338,7 @@ F 0 "J3" H 4500 2300 50  0000 L CNN
 F 1 "ESP32" H 4450 2200 50  0000 L CNN
 F 2 "Pin_Headers:Pin_Header_Straight_2x10" H 4500 1650 50  0001 C CNN
 F 3 "~" H 4500 1650 50  0001 C CNN
+F 4 "S6106-ND‎" H 4500 1650 50  0001 C CNN "Digikey #"
 	1    4500 1650
 	-1   0    0    1   
 $EndComp
