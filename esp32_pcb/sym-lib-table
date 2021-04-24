@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Tinkerforge)(type Legacy)(uri /home/tmurray/proj/tinkerforge-kicad/tinkerforge.lib)(options "")(descr ""))
+)
