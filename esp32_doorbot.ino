@@ -31,28 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
-const char* root_ca = \
-"-----BEGIN CERTIFICATE-----\n" \
-"MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
-"MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n" \
-"DkRTVCBSb290IENBIFgzMB4XDTAwMDkzMDIxMTIxOVoXDTIxMDkzMDE0MDExNVow\n" \
-"PzEkMCIGA1UEChMbRGlnaXRhbCBTaWduYXR1cmUgVHJ1c3QgQ28uMRcwFQYDVQQD\n" \
-"Ew5EU1QgUm9vdCBDQSBYMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\n" \
-"AN+v6ZdQCINXtMxiZfaQguzH0yxrMMpb7NnDfcdAwRgUi+DoM3ZJKuM/IUmTrE4O\n" \
-"rz5Iy2Xu/NMhD2XSKtkyj4zl93ewEnu1lcCJo6m67XMuegwGMoOifooUMM0RoOEq\n" \
-"OLl5CjH9UL2AZd+3UWODyOKIYepLYYHsUmu5ouJLGiifSKOeDNoJjj4XLh7dIN9b\n" \
-"xiqKqy69cK3FCxolkHRyxXtqqzTWMIn/5WgTe1QLyNau7Fqckh49ZLOMxt+/yUFw\n" \
-"7BZy1SbsOFU5Q9D8/RhcQPGX69Wam40dutolucbY38EVAjqr2m7xPi71XAicPNaD\n" \
-"aeQQmxkqtilX4+U9m5/wAl0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNV\n" \
-"HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFMSnsaR7LHH62+FLkHX/xBVghYkQMA0GCSqG\n" \
-"SIb3DQEBBQUAA4IBAQCjGiybFwBcqR7uKGY3Or+Dxz9LwwmglSBd49lZRNI+DT69\n" \
-"ikugdB/OEIKcdBodfpga3csTS7MgROSR6cz8faXbauX+5v3gTt23ADq1cEmv8uXr\n" \
-"AvHRAosZy5Q6XkjEGB5YGV8eAlrwDPGxrancWYaLbumR9YbK+rlmM6pZW87ipxZz\n" \
-"R8srzJmwN0jP41ZL9c8PDHIyh8bwRLtTcm1D9SZImlJnt1ir/md2cXjbDaJWFBM5\n" \
-"JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo\n" \
-"Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
-"-----END CERTIFICATE-----\n";
-
 const char* hostname = "backdoorbot";
 
 const int door_open_sec = 30;
@@ -93,6 +71,7 @@ void setup()
     init_wifi();
     rebuild_cache();
     init_wiegand();
+    init_mqtt();
 
     pinMode( DOOR_PIN, OUTPUT );
     digitalWrite( DOOR_PIN, LOW );
@@ -139,6 +118,31 @@ void init_wiegand()
     pinMode( DATA1, INPUT );
 
     Serial.println( "[WIEGAND.INIT] Wiegand has started" );
+    Serial.flush();
+}
+
+void init_mqtt()
+{
+    Serial.println( "[MQTT.INIT] Startup MQTT" );
+    Serial.flush();
+
+    const esp_mqtt_client_config_t mqtt_cfg = {
+        .uri = mqtt_broker
+        ,.cert_pem = mqtt_cert
+        ,.username = mqtt_user
+        ,.password = mqtt_passwd
+    };
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init( &mqtt_cfg );
+    esp_mqtt_client_register_event(
+        client
+        ,ESP_EVENT_ANY_ID
+        ,mqtt_event_handler
+        ,client
+    );
+    esp_mqtt_client_start( client );
+    esp_mqtt_client_subscribe( mqtt_open_key );
+
+    Serial.println( "[MQTT.INIT] Done init of MQTT" );
     Serial.flush();
 }
 
@@ -373,4 +377,28 @@ void rebuild_cache()
     }
 
     http.end();
+}
+
+void mqtt_event_handler(
+    void *handler_args
+    ,esp_event_base_t base
+    ,int32_t event_id
+    ,void *event_data
+)
+{
+    esp_mqtt_event_handle_t event = event_data;
+
+    switch( (esp_mqtt_event_id_t) event_id ) {
+        case MQTT_EVENT_DATA:
+            Serial.println( "[MQTT.EVENT] Received event data" );
+            if( event->topic == mqtt_open_key ) {
+                Serial.println( "[MQTT.EVENT] Opening door by MQTT command" );
+                Serial.flush();
+                open_door();
+            }
+            break;
+        default:
+            // Do nothing
+            break;
+    }
 }
