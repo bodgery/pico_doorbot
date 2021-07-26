@@ -56,8 +56,10 @@ const char* root_ca = \
 const char* hostname = "backdoorbot";
 
 const int door_open_sec = 30;
-const int door_pin = 12;
-const int led_pin = 13;
+const int door_pin = 13;
+const int reader_led_pin = 35;
+const int reader_24_32_switch = 34;
+const int reader_buzzer = 32;
 const String location = "backdoor";
 
 const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
@@ -74,10 +76,10 @@ unsigned long ms_since_cache = 0;
 
 // Pins for Wiegand reads. These must be able to handle interrupts. All GPIO
 // pins on the ESP32 can handle it, but that may be different on other chips
-const int DATA0 = 2;
-const int DATA1 = 4;
-//const int WIEGAND_BIT_LENGTH = Wiegand::LENGTH_ANY;
-const int WIEGAND_BIT_LENGTH = 8;
+const int DATA0 = 22;
+const int DATA1 = 23;
+const int WIEGAND_BIT_LENGTH = Wiegand::LENGTH_ANY;
+//const int WIEGAND_BIT_LENGTH = 8;
 Wiegand wiegand;
 
 // Door state management
@@ -130,13 +132,17 @@ void init_wiegand()
     Serial.println( "[WIEGAND.INIT] Startup Wiegand" );
     Serial.flush();
 
+    pinMode( reader_24_32_switch, OUTPUT );
+    digitalWrite( reader_24_32_switch, LOW );
+
+    pinMode( DATA0, INPUT );
+    pinMode( DATA1, INPUT );
+
     wiegand.onReceive( wiegand_receive, "[WIEGAND] Card read: " );
     wiegand.onReceiveError( wiegand_error, "[WIEGAND] Card read error: " );
     wiegand.onStateChange( wiegand_state_change, "[WIEGAND] State changed: " );
     wiegand.begin( WIEGAND_BIT_LENGTH, true );
 
-    pinMode( DATA0, INPUT );
-    pinMode( DATA1, INPUT );
 
     Serial.println( "[WIEGAND.INIT] Wiegand has started" );
     Serial.flush();
