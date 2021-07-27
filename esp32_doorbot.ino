@@ -179,6 +179,7 @@ void check_tag( String tag )
         Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
         Serial.flush();
         do_success();
+        log_tag_remote( tag );
     }
     else if( check_tag_remote( tag ) ) {
         do_success();
@@ -225,6 +226,14 @@ bool check_tag_remote( String tag )
 
     http.end();
     return result;
+}
+
+bool log_tag_remote( String tag )
+{
+    Serial.println( "[ENTRY.LOG] Logging entry" );
+    Serial.flush();
+    check_tag_remote( tag );
+    return true;
 }
 
 void open_door()
