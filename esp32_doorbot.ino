@@ -53,14 +53,14 @@ const char* root_ca = \
 "Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
 "-----END CERTIFICATE-----\n";
 
-const char* hostname = "backdoorbot";
+const char* hostname = "testdoorbot";
 
 const int door_open_sec = 30;
 const int door_pin = 13;
 const int reader_led_pin = 35;
 const int reader_24_32_switch = 34;
 const int reader_buzzer = 32;
-const String location = "backdoor";
+const String location = "dummy";
 
 const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
@@ -87,6 +87,11 @@ const int door_open_time_ms = 30 * 1000;
 bool is_door_open = false;
 unsigned long door_opened_at = 0;
 const int DOOR_PIN = 5;
+
+// Tones to play when scan is successful or not
+const unsigned int success_tone = 2600;
+const unsigned int fail_tone = 600;
+const unsigned long tone_time_ms = 500;
 
 
 void setup()
@@ -134,6 +139,10 @@ void init_wiegand()
 
     pinMode( reader_24_32_switch, OUTPUT );
     digitalWrite( reader_24_32_switch, LOW );
+    pinMode( reader_led_pin, OUTPUT );
+    digitalWrite( reader_led_pin, LOW );
+    pinMode( reader_buzzer, OUTPUT );
+    digitalWrite( reader_buzzer, LOW );
 
     pinMode( DATA0, INPUT );
     pinMode( DATA1, INPUT );
@@ -169,14 +178,15 @@ void check_tag( String tag )
     if( found_tag.length() > 0 ) {
         Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
         Serial.flush();
-        open_door();
+        do_success();
     }
     else if( check_tag_remote( tag ) ) {
-        open_door();
+        do_success();
     }
     else {
         Serial.println( "[CHECK] Tag is not valid" );
         Serial.flush();
+        do_fail();
     }
 }
 
@@ -253,6 +263,16 @@ void check_door_status()
         Serial.println( "[DOOR] Door open time has elapsed, closing" );
         close_door();
     }
+}
+
+void do_success()
+{
+    open_door();
+}
+
+void do_fail()
+{
+    // Do nothing
 }
 
 void wiegand_pin_state_change()
