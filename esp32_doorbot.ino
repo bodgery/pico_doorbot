@@ -56,11 +56,9 @@ const char* root_ca = \
 const char* hostname = "testdoorbot";
 
 const int door_open_sec = 30;
-const int door_pin = 13;
 const int reader_led_pin = 35;
 const int reader_24_32_switch = 34;
 const int reader_buzzer = 32;
-const String location = "dummy";
 
 const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
@@ -86,7 +84,7 @@ Wiegand wiegand;
 const int door_open_time_ms = 30 * 1000;
 bool is_door_open = false;
 unsigned long door_opened_at = 0;
-const int DOOR_PIN = 5;
+const int DOOR_PIN = 13;
 
 // Tones to play when scan is successful or not
 const unsigned int success_tone = 2600;
