@@ -106,6 +106,7 @@ void setup()
 void loop()
 {
     check_wiegand();
+    check_serial_commands();
     check_cache_build_time();
     check_door_status();
 }
@@ -153,6 +154,30 @@ void init_wiegand()
 
     Serial.println( "[WIEGAND.INIT] Wiegand has started" );
     Serial.flush();
+}
+
+void check_serial_commands()
+{
+    if( Serial.available() ) {
+        String cmd = Serial.readString();
+        cmd.trim();
+        handle_serial_command( cmd );
+    }
+}
+
+void handle_serial_command( String cmd )
+{
+    if( cmd.equalsIgnoreCase( "open" ) ) {
+        Serial.println( "[CMD] Opening door by serial command" );
+        Serial.flush();
+        open_door();
+    }
+    else {
+        Serial.print( "[CMD] Unrecognized command: {" );
+        Serial.print( cmd );
+        Serial.println( "}" );
+        Serial.flush();
+    }
 }
 
 void check_wiegand()
