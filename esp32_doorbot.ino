@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
+const char* version = "1";
 const char* root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
@@ -53,15 +54,13 @@ const char* root_ca = \
 "Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
 "-----END CERTIFICATE-----\n";
 
-const char* hostname = "testdoorbot";
-
 const int door_open_sec = 30;
 const int reader_led_pin = 35;
 const int reader_24_32_switch = 34;
 const int reader_buzzer = 32;
 
-const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
-const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
+const String dump_keys_request = "https://rfid-prod.shop.thebodgery.org/secure/dump_active_tags";
+const char* check_key_request = "https://rfid-prod.shop.thebodgery.org/entry/";
 
 // Time to rebuild cache
 const unsigned long cache_rebuild_time_ms = 60 * 60 * 1000;
@@ -171,6 +170,18 @@ void handle_serial_command( String cmd )
         Serial.println( "[CMD] Opening door by serial command" );
         Serial.flush();
         open_door();
+    }
+    else if( cmd.equalsIgnoreCase( "stats" ) ) {
+        Serial.print( "[STATS] Bodgery Doorbot v" );
+        Serial.println( version );
+        Serial.print( "[STATS] IP: " );
+        Serial.println( WiFi.localIP() );
+        Serial.print( "[STATS] Hostname: " );
+        Serial.println( hostname );
+        Serial.print( "[STATS] MAC Address: " );
+        Serial.println( WiFi.macAddress() );
+        Serial.print( "[STATS] Keys in cache: " );
+        Serial.println( key_cache->count() );
     }
     else {
         Serial.print( "[CMD] Unrecognized command: {" );

@@ -1,11 +1,42 @@
 #ifndef CONFIG_H
 #  define CONFIG_H
 
-const char* ssid = "WIFI NAME";
-const char* psk = "WIFI PASS";
+const char* ssid = "The Bodgery";
+const char* psk = "";
 
-const char* auth_user = "USER";
-const char* auth_passwd = "PASS";
+const char* location = "woodshop.door";
+
+const char* auth_user = "";
+const char* auth_passwd = "";
+
+const char* hostname = "testdoorbot";
+
+const char* mqtt_open_key = "doorbot.woodshop.open";
+const char* mqtt_broker = "mqtts://10.0.4.154";
+const char* mqtt_user = "backdoorbot";
+const char* mqtt_pass = "";
+const char* mqtt_cert = \
+    "----BEGIN CERTIFICATE-----\n" \
+    "MIIDdDCCAlwCFHNQzZ9vl7ufh/uF2B+M6iDnXnn2MA0GCSqGSIb3DQEBCwUAMIGC\n" \
+    "MQswCQYDVQQGEwJVUzESMBAGA1UECAwJV2lzY29uc2luMRAwDgYDVQQHDAdNYWRp\n" \
+    "c29uMRAwDgYDVQQKDAdCb2RnZXJ5MRAwDgYDVQQDDAdtYXJnZXJ5MSkwJwYJKoZI\n" \
+    "hvcNAQkBFhp0aW1tLm11cnJheUB0aGVib2RnZXJ5Lm9yZzAeFw0yMTA0MDkyMjI2\n" \
+    "NThaFw0yMjA0MDQyMjI2NThaMGoxCzAJBgNVBAYTAkNBMQswCQYDVQQIDAJXSTEO\n" \
+    "MAwGA1UECgwFQm9kZ2UxEzARBgNVBAMMCjEwLjAuNC4xNTQxKTAnBgkqhkiG9w0B\n" \
+    "CQEWGnRpbW0ubXVycmF5QHRoZWJvZGdlcnkub3JnMIIBIjANBgkqhkiG9w0BAQEF\n" \
+    "AAOCAQ8AMIIBCgKCAQEAypnw+ZegzbFz0jK6F3xwcFpysSx9D8KTzO7O0dr8MI/+\n" \
+    "lbX+6PlgKraxGdjZA1i2Cat30uXAqDyuDApppbe2bSdbqVVTl5D+x8LkqTpYpV3F\n" \
+    "bMOVxdWNWhe8I84PhABkfaH6Z4L7Eo9z1/JyQ99IfLVf/PBvh1b7fOpal94HPziT\n" \
+    "vq7MgWRbFCdOxe8/B2ycXjZi1NlxTGwikcEP6Sj1ZydcMThsY7XosrqpOe9muf5U\n" \
+    "2vl+sFGxbVZ52qM+UvBz0ldnWU9Kd1LUtPw60E6oSBUfkgSrWvChXdkeNAxcAjMc\n" \
+    "TXsuU0gnDvoVTXPB2l1yLyt2dHQbTy5Za/6F1lBnvwIDAQABMA0GCSqGSIb3DQEB\n" \
+    "CwUAA4IBAQDGcOhMOz43m+LQwe3GTSIpUgYbd9fsKp2o3AmXKdHJXHh+eqjomEO8\n" \
+    "6pPYGKcRaH5vxGbfSc3VJPHHkDuurXrBvniNn73gGFyvmnzj2gHaZ915zJVsIKfJ\n" \
+    "fDlbibj5E/U+fsSjgcB0440FTCmkAs2o+d9Y/YVRhGJYvWwICz4xMqWjDlaGcoaT\n" \
+    "xkbetjyJyVaeOU1OXjrcvsiJM+rLLMYNikNF8WiIHjU1AZbJnFtpGxxUE0K6hhJk\n" \
+    "9dxYmDV+v80I0twmZrOvvZS/P7wZ3rsC57V3pOMTYqdI4yJVWYQP/oZLiIEKDEdc\n" \
+    "x21XAjS0Nu4OLCfe3fM6l2rP2sBT7NZW\n" \
+    "-----END CERTIFICATE-----\n";
 
 
 #endif
