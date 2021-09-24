@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2020,  Timm Murray
+Copyright (c) 2021,  Timm Murray
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
-const char* version = "1";
+const char* version = "2";
 const char* root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
@@ -180,8 +180,16 @@ void handle_serial_command( String cmd )
         Serial.println( hostname );
         Serial.print( "[STATS] MAC Address: " );
         Serial.println( WiFi.macAddress() );
+        Serial.print( "[STATS] Dump keys URL: " );
+        Serial.println( dump_keys_request );
+        Serial.print( "[STATS] Check keys URL: " );
+        Serial.println( check_key_request );
         Serial.print( "[STATS] Keys in cache: " );
         Serial.println( key_cache->count() );
+    }
+    else if( cmd.equalsIgnoreCase( "newcache" ) ) {
+        Serial.println( "[CMD] Manually starting cache rebuild" );
+        rebuild_cache();
     }
     else {
         Serial.print( "[CMD] Unrecognized command: {" );
@@ -424,7 +432,9 @@ void rebuild_cache()
         Serial.println( "[CACHE] Rebuilding dictionary" );
         Serial.flush();
         key_cache = new Dictionary( dict_size );
-        key_cache->jload( body );
+        int8_t load_result = key_cache->jload( body );
+        Serial.print( "[CACHE] Result from loading JSON: " );
+        Serial.println( load_result );
         Serial.print( "[CACHE] Processed " );
         Serial.print( key_cache->count() );
         Serial.println( " keys" );
