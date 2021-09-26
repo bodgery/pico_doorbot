@@ -96,22 +96,22 @@ U 1 1 60607032
 P 4850 2950
 F 0 "U1" H 4850 3192 50  0000 C CNN
 F 1 "L7805" H 4850 3101 50  0000 C CNN
-F 2 "TO_SOT_Packages_SMD:TO-252-2Lead" H 4875 2800 50  0001 L CIN
+F 2 "TO_SOT_Packages_THT:TO-220_Neutral123_Vertical" H 4875 2800 50  0001 L CIN
 F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 4850 2900 50  0001 C CNN
-F 4 "497-7255-2-ND" H 4850 2950 50  0001 C CNN "Digikey #"
+F 4 "1470-VR10S05-ND" H 4850 2950 50  0001 C CNN "Digikey #"
 	1    4850 2950
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:C C1
 U 1 1 606078C6
-P 4550 3300
-F 0 "C1" H 4665 3346 50  0000 L CNN
-F 1 "22uF" H 4665 3255 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206" H 4588 3150 50  0001 C CNN
-F 3 "~" H 4550 3300 50  0001 C CNN
-F 4 "1276-1771-2-ND" H 4550 3300 50  0001 C CNN "Digikey #"
-	1    4550 3300
+P 5150 3300
+F 0 "C1" H 5265 3346 50  0000 L CNN
+F 1 "22uF" H 5265 3255 50  0000 L CNN
+F 2 "Capacitors_SMD:C_1206" H 5188 3150 50  0001 C CNN
+F 3 "~" H 5150 3300 50  0001 C CNN
+F 4 "1276-1771-2-ND" H 5150 3300 50  0001 C CNN "Digikey #"
+	1    5150 3300
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -134,8 +134,6 @@ Wire Wire Line
 Wire Wire Line
 	4850 3450 5150 3450
 Connection ~ 4850 3450
-Wire Wire Line
-	4850 3450 4550 3450
 Text GLabel 4400 2950 0    50   Input ~ 0
 12V
 Text GLabel 5800 2950 2    50   Input ~ 0
@@ -546,18 +544,6 @@ Wire Wire Line
 Wire Wire Line
 	3400 5750 3400 5900
 $Comp
-L Device:C C2
-U 1 1 60E33917
-P 5150 3300
-F 0 "C2" H 5265 3346 50  0000 L CNN
-F 1 "0.1uF" H 5265 3255 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206" H 5188 3150 50  0001 C CNN
-F 3 "~" H 5150 3300 50  0001 C CNN
-F 4 "478-1529-2-ND" H 5150 3300 50  0001 C CNN "Digikey #"
-	1    5150 3300
-	1    0    0    -1  
-$EndComp
-$Comp
 L Transistor_FET:ZXMP4A16G Q1
 U 1 1 61512B24
 P 1450 5650
@@ -569,4 +555,18 @@ F 4 "ZVN4206GVTR-ND" H 1450 5650 50  0001 C CNN "Digikey #"
 	1    1450 5650
 	1    0    0    -1  
 $EndComp
+$Comp
+L Device:C C2
+U 1 1 61517F68
+P 4550 3300
+F 0 "C2" H 4665 3346 50  0000 L CNN
+F 1 "10uF" H 4665 3255 50  0000 L CNN
+F 2 "Capacitors_SMD:C_1206" H 4588 3150 50  0001 C CNN
+F 3 "~" H 4550 3300 50  0001 C CNN
+F 4 "1276-6736-1-ND" H 4550 3300 50  0001 C CNN "Digikey #"
+	1    4550 3300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4550 3450 4850 3450
 $EndSCHEMATC
