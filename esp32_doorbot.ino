@@ -31,12 +31,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
-const char* hostname = "backdoorbot";
+const char* root_ca = \
+"-----BEGIN CERTIFICATE-----\n" \
+"MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
+"MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n" \
+"DkRTVCBSb290IENBIFgzMB4XDTAwMDkzMDIxMTIxOVoXDTIxMDkzMDE0MDExNVow\n" \
+"PzEkMCIGA1UEChMbRGlnaXRhbCBTaWduYXR1cmUgVHJ1c3QgQ28uMRcwFQYDVQQD\n" \
+"Ew5EU1QgUm9vdCBDQSBYMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\n" \
+"AN+v6ZdQCINXtMxiZfaQguzH0yxrMMpb7NnDfcdAwRgUi+DoM3ZJKuM/IUmTrE4O\n" \
+"rz5Iy2Xu/NMhD2XSKtkyj4zl93ewEnu1lcCJo6m67XMuegwGMoOifooUMM0RoOEq\n" \
+"OLl5CjH9UL2AZd+3UWODyOKIYepLYYHsUmu5ouJLGiifSKOeDNoJjj4XLh7dIN9b\n" \
+"xiqKqy69cK3FCxolkHRyxXtqqzTWMIn/5WgTe1QLyNau7Fqckh49ZLOMxt+/yUFw\n" \
+"7BZy1SbsOFU5Q9D8/RhcQPGX69Wam40dutolucbY38EVAjqr2m7xPi71XAicPNaD\n" \
+"aeQQmxkqtilX4+U9m5/wAl0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNV\n" \
+"HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFMSnsaR7LHH62+FLkHX/xBVghYkQMA0GCSqG\n" \
+"SIb3DQEBBQUAA4IBAQCjGiybFwBcqR7uKGY3Or+Dxz9LwwmglSBd49lZRNI+DT69\n" \
+"ikugdB/OEIKcdBodfpga3csTS7MgROSR6cz8faXbauX+5v3gTt23ADq1cEmv8uXr\n" \
+"AvHRAosZy5Q6XkjEGB5YGV8eAlrwDPGxrancWYaLbumR9YbK+rlmM6pZW87ipxZz\n" \
+"R8srzJmwN0jP41ZL9c8PDHIyh8bwRLtTcm1D9SZImlJnt1ir/md2cXjbDaJWFBM5\n" \
+"JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo\n" \
+"Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
+"-----END CERTIFICATE-----\n";
+
+const char* hostname = "testdoorbot";
 
 const int door_open_sec = 30;
-const int door_pin = 12;
-const int led_pin = 13;
-const String location = "backdoor";
+const int reader_led_pin = 35;
+const int reader_24_32_switch = 34;
+const int reader_buzzer = 32;
 
 const String dump_keys_request = "https://rfid2.shop.thebodgery.org/secure/dump_active_tags";
 const char* check_key_request = "https://rfid2.shop.thebodgery.org/entry/";
@@ -52,17 +74,22 @@ unsigned long ms_since_cache = 0;
 
 // Pins for Wiegand reads. These must be able to handle interrupts. All GPIO
 // pins on the ESP32 can handle it, but that may be different on other chips
-const int DATA0 = 2;
-const int DATA1 = 4;
-//const int WIEGAND_BIT_LENGTH = Wiegand::LENGTH_ANY;
-const int WIEGAND_BIT_LENGTH = 8;
+const int DATA0 = 22;
+const int DATA1 = 23;
+const int WIEGAND_BIT_LENGTH = Wiegand::LENGTH_ANY;
+//const int WIEGAND_BIT_LENGTH = 8;
 Wiegand wiegand;
 
 // Door state management
 const int door_open_time_ms = 30 * 1000;
 bool is_door_open = false;
 unsigned long door_opened_at = 0;
-const int DOOR_PIN = 5;
+const int DOOR_PIN = 13;
+
+// Tones to play when scan is successful or not
+const unsigned int success_tone = 2600;
+const unsigned int fail_tone = 600;
+const unsigned long tone_time_ms = 500;
 
 
 void setup()
@@ -71,7 +98,6 @@ void setup()
     init_wifi();
     rebuild_cache();
     init_wiegand();
-    init_mqtt();
 
     pinMode( DOOR_PIN, OUTPUT );
     digitalWrite( DOOR_PIN, LOW );
@@ -80,6 +106,7 @@ void setup()
 void loop()
 {
     check_wiegand();
+    check_serial_commands();
     check_cache_build_time();
     check_door_status();
 }
@@ -109,41 +136,48 @@ void init_wiegand()
     Serial.println( "[WIEGAND.INIT] Startup Wiegand" );
     Serial.flush();
 
+    pinMode( reader_24_32_switch, OUTPUT );
+    digitalWrite( reader_24_32_switch, LOW );
+    pinMode( reader_led_pin, OUTPUT );
+    digitalWrite( reader_led_pin, LOW );
+    pinMode( reader_buzzer, OUTPUT );
+    digitalWrite( reader_buzzer, LOW );
+
+    pinMode( DATA0, INPUT );
+    pinMode( DATA1, INPUT );
+
     wiegand.onReceive( wiegand_receive, "[WIEGAND] Card read: " );
     wiegand.onReceiveError( wiegand_error, "[WIEGAND] Card read error: " );
     wiegand.onStateChange( wiegand_state_change, "[WIEGAND] State changed: " );
     wiegand.begin( WIEGAND_BIT_LENGTH, true );
 
-    pinMode( DATA0, INPUT );
-    pinMode( DATA1, INPUT );
 
     Serial.println( "[WIEGAND.INIT] Wiegand has started" );
     Serial.flush();
 }
 
-void init_mqtt()
+void check_serial_commands()
 {
-    Serial.println( "[MQTT.INIT] Startup MQTT" );
-    Serial.flush();
+    if( Serial.available() ) {
+        String cmd = Serial.readString();
+        cmd.trim();
+        handle_serial_command( cmd );
+    }
+}
 
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = mqtt_broker
-        ,.cert_pem = mqtt_cert
-        ,.username = mqtt_user
-        ,.password = mqtt_passwd
-    };
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init( &mqtt_cfg );
-    esp_mqtt_client_register_event(
-        client
-        ,ESP_EVENT_ANY_ID
-        ,mqtt_event_handler
-        ,client
-    );
-    esp_mqtt_client_start( client );
-    esp_mqtt_client_subscribe( mqtt_open_key );
-
-    Serial.println( "[MQTT.INIT] Done init of MQTT" );
-    Serial.flush();
+void handle_serial_command( String cmd )
+{
+    if( cmd.equalsIgnoreCase( "open" ) ) {
+        Serial.println( "[CMD] Opening door by serial command" );
+        Serial.flush();
+        open_door();
+    }
+    else {
+        Serial.print( "[CMD] Unrecognized command: {" );
+        Serial.print( cmd );
+        Serial.println( "}" );
+        Serial.flush();
+    }
 }
 
 void check_wiegand()
@@ -167,14 +201,16 @@ void check_tag( String tag )
     if( found_tag.length() > 0 ) {
         Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
         Serial.flush();
-        open_door();
+        do_success();
+        log_tag_remote( tag );
     }
     else if( check_tag_remote( tag ) ) {
-        open_door();
+        do_success();
     }
     else {
         Serial.println( "[CHECK] Tag is not valid" );
         Serial.flush();
+        do_fail();
     }
 }
 
@@ -215,6 +251,14 @@ bool check_tag_remote( String tag )
     return result;
 }
 
+bool log_tag_remote( String tag )
+{
+    Serial.println( "[ENTRY.LOG] Logging entry" );
+    Serial.flush();
+    check_tag_remote( tag );
+    return true;
+}
+
 void open_door()
 {
     Serial.println( "[DOOR] Instructed to open" );
@@ -251,6 +295,16 @@ void check_door_status()
         Serial.println( "[DOOR] Door open time has elapsed, closing" );
         close_door();
     }
+}
+
+void do_success()
+{
+    open_door();
+}
+
+void do_fail()
+{
+    // Do nothing
 }
 
 void wiegand_pin_state_change()
@@ -377,28 +431,4 @@ void rebuild_cache()
     }
 
     http.end();
-}
-
-void mqtt_event_handler(
-    void *handler_args
-    ,esp_event_base_t base
-    ,int32_t event_id
-    ,void *event_data
-)
-{
-    esp_mqtt_event_handle_t event = event_data;
-
-    switch( (esp_mqtt_event_id_t) event_id ) {
-        case MQTT_EVENT_DATA:
-            Serial.println( "[MQTT.EVENT] Received event data" );
-            if( event->topic == mqtt_open_key ) {
-                Serial.println( "[MQTT.EVENT] Opening door by MQTT command" );
-                Serial.flush();
-                open_door();
-            }
-            break;
-        default:
-            // Do nothing
-            break;
-    }
 }
