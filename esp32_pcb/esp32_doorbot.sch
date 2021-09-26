@@ -14,18 +14,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Transistor_FET:2N7002E Q1
-U 1 1 603A6F1F
-P 1450 5650
-F 0 "Q1" H 1654 5696 50  0000 L CNN
-F 1 "2N7002E" H 1654 5605 50  0000 L CNN
-F 2 "TO_SOT_Packages_SMD:SOT-223" H 1650 5575 50  0001 L CIN
-F 3 "http://www.diodes.com/assets/Datasheets/ds30376.pdf" H 1450 5650 50  0001 L CNN
-F 4 "ZVN4206GVTR-ND" H 1450 5650 50  0001 C CNN "Digikey #"
-	1    1450 5650
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR0101
 U 1 1 603A7B30
 P 1550 5950
@@ -567,6 +555,18 @@ F 2 "Capacitors_SMD:C_1206" H 5188 3150 50  0001 C CNN
 F 3 "~" H 5150 3300 50  0001 C CNN
 F 4 "478-1529-2-ND" H 5150 3300 50  0001 C CNN "Digikey #"
 	1    5150 3300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Transistor_FET:ZXMP4A16G Q1
+U 1 1 61512B24
+P 1450 5650
+F 0 "Q1" H 1654 5696 50  0000 L CNN
+F 1 "ZXMP4A16G" H 1654 5605 50  0000 L CNN
+F 2 "TO_SOT_Packages_SMD:SOT-223" H 1650 5575 50  0001 L CIN
+F 3 "https://www.diodes.com/assets/Datasheets/ZXMP4A16G.pdf" H 1450 5650 50  0001 L CNN
+F 4 "ZVN4206GVTR-ND" H 1450 5650 50  0001 C CNN "Digikey #"
+	1    1450 5650
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
