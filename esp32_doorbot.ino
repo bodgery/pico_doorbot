@@ -70,6 +70,7 @@ const unsigned long cache_rebuild_time_ms = 60 * 60 * 1000;
 const int dict_size = 8192;
 Dictionary *key_cache;
 unsigned long ms_since_cache = 0;
+const unsigned int CACHE_BUILD_TRIES = 3;
 
 // Pins for Wiegand reads. These must be able to handle interrupts. All GPIO
 // pins on the ESP32 can handle it, but that may be different on other chips
@@ -212,24 +213,38 @@ void check_tag( String tag )
     Serial.print( "[CHECK] Checking tag: " );
     Serial.println( tag );
 
-    String found_tag = key_cache->search( tag );
-    Serial.print( "[CHECK] Tag in cache: " );
-    Serial.println( found_tag );
-    Serial.flush();
-
-    if( found_tag.length() > 0 ) {
-        Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
+    if( key_cache ) {
+        String found_tag = key_cache->search( tag );
+        Serial.print( "[CHECK] Tag in cache: " );
+        Serial.println( found_tag );
         Serial.flush();
-        do_success();
-        log_tag_remote( tag );
-    }
-    else if( check_tag_remote( tag ) ) {
-        do_success();
+
+        if( found_tag.length() > 0 ) {
+            Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
+            Serial.flush();
+            do_success();
+            log_tag_remote( tag );
+        }
+        else if( check_tag_remote( tag ) ) {
+            do_success();
+        }
+        else {
+            Serial.println( "[CHECK] Tag is not valid" );
+            Serial.flush();
+            do_fail();
+        }
     }
     else {
-        Serial.println( "[CHECK] Tag is not valid" );
+        Serial.println( "[CHECK] Local cache is null, checking remote" );
         Serial.flush();
-        do_fail();
+        if( check_tag_remote( tag ) ) {
+            do_success();
+        }
+        else {
+            Serial.println( "[CHECK] Tag is not valid" );
+            Serial.flush();
+            do_fail();
+        }
     }
 }
 
@@ -416,6 +431,15 @@ void check_cache_build_time()
 
 void rebuild_cache()
 {
+    rebuild_cache( CACHE_BUILD_TRIES );
+}
+
+void rebuild_cache(
+    unsigned int tries_left
+)
+{
+    if( 0 == tries_left ) return;
+
     HTTPClient http;
 
     Serial.println( "[CACHE] Rebuild cached keys" );
@@ -431,24 +455,42 @@ void rebuild_cache()
 
         Serial.println( "[CACHE] Rebuilding dictionary" );
         Serial.flush();
-        key_cache = new Dictionary( dict_size );
-        int8_t load_result = key_cache->jload( body );
+        Dictionary *new_cache = new Dictionary( dict_size );
+        int8_t load_result = new_cache->jload( body );
         Serial.print( "[CACHE] Result from loading JSON: " );
         Serial.println( load_result );
         Serial.print( "[CACHE] Processed " );
-        Serial.print( key_cache->count() );
+        Serial.print( new_cache->count() );
         Serial.println( " keys" );
         Serial.flush();
 
-        // Reset time since rebuild
-        ms_since_cache = millis();
+
+        if( 0 != load_result ) {
+            Serial.print( "[CACHE] Trying cache rebuild again, tries left: " );
+            Serial.println( tries_left - 1 );
+            Serial.flush();
+            rebuild_cache( tries_left - 1 );
+        }
+        else {
+            key_cache = new_cache;
+
+            // Reset time since rebuild
+            ms_since_cache = millis();
+
+            Serial.println( "[CACHE] Cache rebuild successful" );
+            Serial.flush();
+        }
     }
     else {
         Serial.print( "[CACHE] Error fetching new key database: " );
         Serial.println( status );
         Serial.print( "[CACHE] HTTP status: " );
         Serial.println( http.getString() );
+        Serial.print( "[CACHE] Trying cache rebuild again, tries left: " );
+        Serial.println( tries_left - 1 );
         Serial.flush();
+
+        rebuild_cache( tries_left - 1 );
     }
 
     http.end();
