@@ -548,10 +548,10 @@ L Transistor_FET:ZXMP4A16G Q1
 U 1 1 61512B24
 P 1450 5650
 F 0 "Q1" H 1654 5696 50  0000 L CNN
-F 1 "ZXMP4A16G" H 1654 5605 50  0000 L CNN
+F 1 "NDT3055" H 1654 5605 50  0000 L CNN
 F 2 "TO_SOT_Packages_SMD:SOT-223" H 1650 5575 50  0001 L CIN
-F 3 "https://www.diodes.com/assets/Datasheets/ZXMP4A16G.pdf" H 1450 5650 50  0001 L CNN
-F 4 "ZVN4206GVTR-ND" H 1450 5650 50  0001 C CNN "Digikey #"
+F 3 "https://www.onsemi.com/pdf/datasheet/ndt3055-d.pdf" H 1450 5650 50  0001 L CNN
+F 4 "NDT3055CT-ND" H 1450 5650 50  0001 C CNN "Digikey #"
 	1    1450 5650
 	1    0    0    -1  
 $EndComp

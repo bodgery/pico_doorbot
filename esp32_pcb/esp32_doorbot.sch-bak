@@ -98,7 +98,7 @@ F 0 "U1" H 4850 3192 50  0000 C CNN
 F 1 "L7805" H 4850 3101 50  0000 C CNN
 F 2 "TO_SOT_Packages_THT:TO-220_Neutral123_Vertical" H 4875 2800 50  0001 L CIN
 F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 4850 2900 50  0001 C CNN
-F 4 "497-7255-2-ND" H 4850 2950 50  0001 C CNN "Digikey #"
+F 4 "1470-VR10S05-ND" H 4850 2950 50  0001 C CNN "Digikey #"
 	1    4850 2950
 	1    0    0    -1  
 $EndComp
