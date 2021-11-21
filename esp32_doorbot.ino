@@ -25,6 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Dictionary.h>
 #include <HTTPClient.h>
+#include <Tone32.h>
 #include <WiFi.h>
 #include <Wiegand.h>
 
@@ -87,9 +88,10 @@ unsigned long door_opened_at = 0;
 const int DOOR_PIN = 13;
 
 // Tones to play when scan is successful or not
-const unsigned int success_tone = 2600;
-const unsigned int fail_tone = 600;
-const unsigned long tone_time_ms = 500;
+const unsigned int success_tone = NOTE_FS2;
+const unsigned int fail_tone = NOTE_C4;
+const unsigned long tone_time_ms = 2000;
+const unsigned long buzzer_channel = 0;
 
 
 void setup()
@@ -364,11 +366,34 @@ void check_door_status()
 void do_success()
 {
     open_door();
+    play_success_tone();
 }
 
 void do_fail()
 {
-    // Do nothing
+    play_fail_tone();
+}
+
+void play_success_tone()
+{
+    Serial.println( "[TONE.SUCCESS] Playing" );
+    play_tone( success_tone );
+}
+
+void play_fail_tone()
+{
+    Serial.println( "[TONE.FAIL] Playing" );
+    play_tone( fail_tone );
+}
+
+void play_tone( unsigned int note )
+{
+    Serial.println( "[TONE] Playing tone" );
+    Serial.flush();
+
+    // Disabled. This seems to block while it does its thing, which is bad.
+    //
+    //tone( reader_buzzer, success_tone, tone_time_ms, buzzer_channel );
 }
 
 void wiegand_pin_state_change()
