@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
-const char* version = "2";
+const char* version = "3";
 const char* root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
@@ -167,12 +167,12 @@ void check_serial_commands()
 
 void handle_serial_command( String cmd )
 {
-    if( cmd.equalsIgnoreCase( "open" ) ) {
+    if( cmd.equals( "open" ) ) {
         Serial.println( "[CMD] Opening door by serial command" );
         Serial.flush();
         open_door();
     }
-    else if( cmd.equalsIgnoreCase( "stats" ) ) {
+    else if( cmd.equals( "stats" ) ) {
         Serial.print( "[STATS] Bodgery Doorbot v" );
         Serial.println( version );
         Serial.print( "[STATS] IP: " );
@@ -188,9 +188,39 @@ void handle_serial_command( String cmd )
         Serial.print( "[STATS] Keys in cache: " );
         Serial.println( key_cache->count() );
     }
-    else if( cmd.equalsIgnoreCase( "newcache" ) ) {
+    else if( cmd.equals( "newcache" ) ) {
         Serial.println( "[CMD] Manually starting cache rebuild" );
         rebuild_cache();
+    }
+    else if( cmd.startsWith( "check" ) ) {
+        if( int space_index = cmd.indexOf( ' ' ) ) {
+            String fob_id = cmd.substring( space_index + 1 );
+            Serial.print( "[CHECK.CMD] Checking fob ID <" );
+            Serial.print( fob_id );
+            Serial.println( ">" );
+            Serial.flush();
+
+            String found_tag = key_cache->search( fob_id );
+            Serial.print( "[CHECK.CMD] Tag in cache: " );
+            Serial.println( found_tag );
+            Serial.flush();
+
+            bool is_remote = check_tag_remote( fob_id );
+            Serial.print( "[CHECK.CMD] Tag on remote server: " );
+            Serial.println( is_remote );
+            Serial.flush();
+        }
+        else {
+            Serial.println( "[CMD] 'check' command needs a parameter" );
+            Serial.flush();
+        }
+    }
+    else if( cmd.equals( "help" ) ) {
+        Serial.println( "[HELP] Commands:" );
+        Serial.println( "[HELP] check <ID> - Check if a keyfob is valid" );
+        Serial.println( "[HELP] newcache - Rebuild the cache" );
+        Serial.println( "[HELP] open - Open the door" );
+        Serial.println( "[HELP] stats - Dump info about this doorbot" );
     }
     else {
         Serial.print( "[CMD] Unrecognized command: {" );
@@ -438,7 +468,12 @@ void rebuild_cache(
     unsigned int tries_left
 )
 {
-    if( 0 == tries_left ) return;
+    if( 0 == tries_left ) {
+        // Give up. Have to set time since cache here, or else it will try 
+        // to run the cache rebuild again on the next loop.
+        ms_since_cache = millis();
+        return;
+    }
 
     HTTPClient http;
 
@@ -452,9 +487,14 @@ void rebuild_cache(
         Serial.println( "[CACHE] Fetched new key database" );
         Serial.flush();
         String body = http.getString();
+        int len = body.length();
 
+        Serial.print( "[CACHE] Received " );
+        Serial.print( len );
+        Serial.println( " bytes" );
         Serial.println( "[CACHE] Rebuilding dictionary" );
         Serial.flush();
+
         Dictionary *new_cache = new Dictionary( dict_size );
         int8_t load_result = new_cache->jload( body );
         Serial.print( "[CACHE] Result from loading JSON: " );
