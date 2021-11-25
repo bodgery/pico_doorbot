@@ -23,7 +23,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <Dictionary.h>
+#include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <Tone32.h>
 #include <WiFi.h>
@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 
-const char* version = "3";
+const char* version = "4";
 const char* root_ca = \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
@@ -68,8 +68,8 @@ const unsigned long cache_rebuild_time_ms = 60 * 60 * 1000;
 
 // We're going to store a lot of keys, and this is our main thing, so 
 // make a lot of room.
-const int dict_size = 8192;
-Dictionary *key_cache;
+const int dict_size = 21600;
+DynamicJsonDocument key_cache( dict_size );
 unsigned long ms_since_cache = 0;
 const unsigned int CACHE_BUILD_TRIES = 3;
 
@@ -188,7 +188,7 @@ void handle_serial_command( String cmd )
         Serial.print( "[STATS] Check keys URL: " );
         Serial.println( check_key_request );
         Serial.print( "[STATS] Keys in cache: " );
-        Serial.println( key_cache->count() );
+        Serial.println( key_cache.size() );
     }
     else if( cmd.equals( "newcache" ) ) {
         Serial.println( "[CMD] Manually starting cache rebuild" );
@@ -202,7 +202,7 @@ void handle_serial_command( String cmd )
             Serial.println( ">" );
             Serial.flush();
 
-            String found_tag = key_cache->search( fob_id );
+            bool found_tag = key_cache.containsKey( fob_id );
             Serial.print( "[CHECK.CMD] Tag in cache: " );
             Serial.println( found_tag );
             Serial.flush();
@@ -245,38 +245,24 @@ void check_tag( String tag )
     Serial.print( "[CHECK] Checking tag: " );
     Serial.println( tag );
 
-    if( key_cache ) {
-        String found_tag = key_cache->search( tag );
-        Serial.print( "[CHECK] Tag in cache: " );
-        Serial.println( found_tag );
-        Serial.flush();
+    bool found_tag = key_cache.containsKey( tag );
+    Serial.print( "[CHECK] Tag in cache: " );
+    Serial.println( found_tag );
+    Serial.flush();
 
-        if( found_tag.length() > 0 ) {
-            Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
-            Serial.flush();
-            do_success();
-            log_tag_remote( tag );
-        }
-        else if( check_tag_remote( tag ) ) {
-            do_success();
-        }
-        else {
-            Serial.println( "[CHECK] Tag is not valid" );
-            Serial.flush();
-            do_fail();
-        }
+    if( found_tag ) {
+        Serial.println( "[CHECK.CACHE] Tag valid in local cache" );
+        Serial.flush();
+        do_success();
+        log_tag_remote( tag );
+    }
+    else if( check_tag_remote( tag ) ) {
+        do_success();
     }
     else {
-        Serial.println( "[CHECK] Local cache is null, checking remote" );
+        Serial.println( "[CHECK] Tag is not valid" );
         Serial.flush();
-        if( check_tag_remote( tag ) ) {
-            do_success();
-        }
-        else {
-            Serial.println( "[CHECK] Tag is not valid" );
-            Serial.flush();
-            do_fail();
-        }
+        do_fail();
     }
 }
 
@@ -486,7 +472,19 @@ void check_cache_build_time()
 
 void rebuild_cache()
 {
+    unsigned long mem_before = ESP.getFreeHeap();
+    Serial.print( "[CACHE] Heap free before rebuilding cache: " );
+    Serial.println( mem_before );
+
     rebuild_cache( CACHE_BUILD_TRIES );
+
+    unsigned long mem_after = ESP.getFreeHeap();
+    long extra_usage = mem_before - mem_after;
+    Serial.print( "[CACHE] Heap free after rebuilding cache: " );
+    Serial.print( mem_after );
+    Serial.print( " (" );
+    Serial.print( extra_usage );
+    Serial.println( " more bytes)" );
 }
 
 void rebuild_cache(
@@ -520,31 +518,24 @@ void rebuild_cache(
         Serial.println( "[CACHE] Rebuilding dictionary" );
         Serial.flush();
 
-        Dictionary *new_cache = new Dictionary( dict_size );
-        int8_t load_result = new_cache->jload( body );
-        Serial.print( "[CACHE] Result from loading JSON: " );
-        Serial.println( load_result );
+        key_cache.clear();
+        DeserializationError error = deserializeJson( key_cache, body );
+        if( error ) {
+            Serial.print( "[CACHE] Deserialization error: " );
+            Serial.println( error.f_str() );
+            rebuild_cache( tries_left - 1 );
+            return;
+        }
         Serial.print( "[CACHE] Processed " );
-        Serial.print( new_cache->count() );
+        Serial.print( key_cache.size() );
         Serial.println( " keys" );
         Serial.flush();
 
+        // Reset time since rebuild
+        ms_since_cache = millis();
 
-        if( 0 != load_result ) {
-            Serial.print( "[CACHE] Trying cache rebuild again, tries left: " );
-            Serial.println( tries_left - 1 );
-            Serial.flush();
-            rebuild_cache( tries_left - 1 );
-        }
-        else {
-            key_cache = new_cache;
-
-            // Reset time since rebuild
-            ms_since_cache = millis();
-
-            Serial.println( "[CACHE] Cache rebuild successful" );
-            Serial.flush();
-        }
+        Serial.println( "[CACHE] Cache rebuild successful" );
+        Serial.flush();
     }
     else {
         Serial.print( "[CACHE] Error fetching new key database: " );
@@ -557,6 +548,4 @@ void rebuild_cache(
 
         rebuild_cache( tries_left - 1 );
     }
-
-    http.end();
 }
